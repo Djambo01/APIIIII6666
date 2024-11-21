@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Практическая работа</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(120deg, #4facfe, #00f2fe);
+            color: #333;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px;
+            background-color: #333;
+            color: white;
+        }
+
+        main {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        canvas {
+            border: 2px solid #000;
+            background-color: white;
+        }
+
+        .buttons, .worker-input {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #4caf50;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        input {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .output {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e7f7e7;
+            border: 1px solid #d4e7d4;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Практическая работа: Навигация, Графика и Web Workers</h1>
+    </header>
+    <main>
+        <!-- Навигация по истории -->
+        <section class="navigation">
+            <h2>Навигация по истории браузера</h2>
+            <div class="buttons">
+                <button id="back">Назад</button>
+                <button id="forward">Вперед</button>
+                <button id="addHistory">Добавить в историю</button>
+            </div>
+        </section>
+
+        <!-- Canvas -->
+        <section class="canvas-section">
+            <h2>Интерактивная графика</h2>
+            <canvas id="canvas" width="500" height="300"></canvas>
+        </section>
+
+        <!-- Web Worker -->
+        <section class="worker-section">
+            <h2>Вычисления с Web Worker</h2>
+            <div class="worker-input">
+                <input type="number" id="factorialInput" placeholder="Введите число">
+                <button id="calculate">Вычислить</button>
+            </div>
+            <div class="output" id="output"></div>
+        </section>
+    </main>
+    <script>
+        // Навигация по истории
+        const backButton = document.getElementById('back');
+        const forwardButton = document.getElementById('forward');
+        const addHistoryButton = document.getElementById('addHistory');
+
+        backButton.addEventListener('click', () => {
+            if (history.length > 1) {
+                history.back();
+            } else {
+                alert('История пуста! Нажмите "Добавить в историю".');
+            }
+        });
+
+        forwardButton.addEventListener('click', () => {
+            history.forward();
+        });
+
+        addHistoryButton.addEventListener('click', () => {
+            const randomPage = `#page${Math.floor(Math.random() * 100)}`;
+            history.pushState({}, '', randomPage);
+            alert(`Добавлена страница в историю: ${randomPage}`);
+        });
+
+        // Canvas и анимация
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let x = 50, y = 50, dx = 2, dy = 2;
+
+        function drawCircle() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath();
+            ctx.arc(x, y, 20, 0, Math.PI * 2, false);
+            ctx.fillStyle = 'red';
+            ctx.fill();
+            ctx.closePath();
+
+            if (x + dx > canvas.width - 20 || x + dx < 20) dx = -dx;
+            if (y + dy > canvas.height - 20 || y + dy < 20) dy = -dy;
+
+            x += dx;
+            y += dy;
+
+            requestAnimationFrame(drawCircle);
+        }
+        drawCircle();
+
+        // Web Worker
+        const worker = new Worker(URL.createObjectURL(new Blob([`
+            onmessage = function(e) {
+                const num = e.data;
+                const factorial = (n) => n <= 1 ? 1 : n * factorial(n - 1);
+                postMessage(factorial(num));
+            }
+        `], { type: 'application/javascript' })));
+
+        const factorialInput = document.getElementById('factorialInput');
+        const calculateButton = document.getElementById('calculate');
+        const outputDiv = document.getElementById('output');
+
+        calculateButton.addEventListener('click', () => {
+            const num = parseInt(factorialInput.value);
+            if (isNaN(num) || num < 0) {
+                outputDiv.textContent = 'Введите положительное число!';
+                return;
+            }
+            outputDiv.textContent = 'Вычисления...';
+            worker.postMessage(num);
+        });
+
+        worker.onmessage = function(e) {
+            outputDiv.textContent = `Результат: ${e.data}`;
+        };
+    </script>
+</body>
+</html>
